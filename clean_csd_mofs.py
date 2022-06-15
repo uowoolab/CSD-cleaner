@@ -232,6 +232,9 @@ def csd_to_pymatgen(path, atoms):
     coords = []
 
     atom_dict = get_dict(blocks["atom"], atoms, "_atom_site_label")
+    # Need to have 4th dimension (value of 1) for matrix multiplication
+    # when applying the symmetry operations. The extra dimension
+    # is removed later by the covert_to_p1 function
     for x, y, z in zip(atom_dict["_atom_site_fract_x"],
                        atom_dict["_atom_site_fract_y"],
                        atom_dict["_atom_site_fract_z"]):
