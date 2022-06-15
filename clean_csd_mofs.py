@@ -8,6 +8,7 @@ import argparse
 import os
 import uuid
 import numpy as np
+import shutil
 
 script_path, script_name = os.path.split(os.path.realpath(__file__))
 temp_cif_path = "/tmp/temp-{}.cif".format(uuid.uuid4().hex)
@@ -95,7 +96,7 @@ def get_asymmetric_unit(ref):
     cryst = csd_reader.entry(ref).crystal
     cryst.centre_molecule()
     mol = cryst.asymmetric_unit_molecule
-    atoms = [str(atom).strip("Atom(").strip(")") for atom in mol.atoms]
+    atoms = [str(atom).replace("Atom(", "").strip(")") for atom in mol.atoms]
     with CrystalWriter(temp_cif_path) as mol_writer:
         mol_writer.write(cryst)
 
@@ -273,7 +274,7 @@ def csd_to_pymatgen(path, atoms):
 
     return struct
 
-def main(path):
+def main(path, tmp_path=None):
 
     """
     Get the asymmetric unit of a CSD structure and convert it to a Pymatgen
@@ -281,7 +282,8 @@ def main(path):
 
         Parameters:
             path (str): Path to write the cif
-        
+            tmp_path (str): Path to write the temporary cif for debugging
+
         Returns:
             mof_p1 (Pymatgen Structure object): MOF in P1 symmetry
     """
@@ -289,6 +291,8 @@ def main(path):
     ref = path.split('/')[-1].split("_P1.cif")[0]
     asymmetric_unit_atoms = get_asymmetric_unit(ref)
     mof_p1 = csd_to_pymatgen(temp_cif_path, asymmetric_unit_atoms)
+    if tmp_path is not None:
+        shutil.copyfile(temp_cif_path, tmp_path)
     os.remove(temp_cif_path)
     CifWriter(mof_p1).write_file(path)
     
@@ -304,9 +308,16 @@ if __name__ == "__main__":
                         default=os.getcwd(),
                         help="Directory to write the cif." + 
                         " Defaults to current working directory.",)
+    parser.add_argument("-d", action='store_true',
+                        help="If this flag is present, " +
+                        " keep the temporary CSD cif.")
+
     args = parser.parse_args()
     refcode = args.refcode
     write_dir = args.write_dir
     final_cif_path = "{}/{}_P1.cif".format(write_dir, refcode)
-
-    main(final_cif_path)
+    if args.d: 
+        main(final_cif_path, tmp_path="{}/{}_original.cif".format(write_dir,
+                                                                  refcode))
+    else:
+        main(final_cif_path)
