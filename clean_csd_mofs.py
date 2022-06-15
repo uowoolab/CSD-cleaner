@@ -29,7 +29,9 @@ def get_block(cif_lines, keyword, start):
     """
 
     for num, line in enumerate(cif_lines[start:]):
-        if line[0] == "_" and line.strip("\n").split("_")[1] != keyword:
+        if (line[0] == "_" and not 
+            line.strip("\n").split("_", maxsplit=1)[1].startswith(keyword) or
+            "loop_" in line):
             end = num + start
             break
     try:
@@ -40,6 +42,7 @@ def get_block(cif_lines, keyword, start):
     block = [val for val in block if val != "loop_\n"]
 
     return block
+
 
 def get_dict(lst, good_atoms, label_key):
 
@@ -64,12 +67,13 @@ def get_dict(lst, good_atoms, label_key):
     for num, line in enumerate(lst):
         if line[0] == "_":
             dict[line.strip().strip("\n")] = []
-        else:
+    for num, line in enumerate(lst):
+        if line[0] != "_":
             line = line.strip().replace("(", "").replace(")", "").split()
             if line[list(dict.keys()).index(label_key)] in good_atoms:
                 for n, prop in enumerate(dict.keys()):
                     dict[prop].append(line[n])
-        
+       
     return dict
 
 def get_asymmetric_unit(ref):
@@ -182,14 +186,20 @@ def csd_to_pymatgen(path, atoms):
         f.close()
 
     blocks = {"symmetry": None,
-            "atom": None, 
+            "atom_site": None, 
             "geom": None}
 
     for num, line in enumerate(cif):
         if "loop_" in line:
             for block in blocks.keys():
-                if cif[num + 1].strip().split("_")[1] == block:
-                    blocks[block] = get_block(cif, block, num)
+                test_header = cif[num + 1].strip().split("_", maxsplit=1)[1]
+                # Found some cases with anisotropic info with same prefix
+                # ignore these for now...
+                if test_header.startswith(block):
+                    if block == "atom_site" and test_header.startswith("atom_site_aniso"):
+                        pass
+                    else:
+                        blocks[block] = get_block(cif, block, num + 1)
         elif "_symmetry_space_group_name_H-M" in line:
             space_group_name_HM = line.strip().split()[-1]
         elif "_symmetry_Int_Tables_number" in line:
@@ -226,12 +236,11 @@ def csd_to_pymatgen(path, atoms):
                                           replace("(", "").
                                           replace(")", "").
                                           split()[-1])
-
     num_cols = 0
     atom_dict = {}
     coords = []
 
-    atom_dict = get_dict(blocks["atom"], atoms, "_atom_site_label")
+    atom_dict = get_dict(blocks["atom_site"], atoms, "_atom_site_label")
     # Need to have 4th dimension (value of 1) for matrix multiplication
     # when applying the symmetry operations. The extra dimension
     # is removed later by the covert_to_p1 function
