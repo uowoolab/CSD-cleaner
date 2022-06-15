@@ -52,9 +52,9 @@ def get_dict(lst, good_atoms, label_key):
 
         Parameters:
             lst (list of str): List of lines to consider for dictionary
-            good_atoms: Atoms to consider for dictionary
-            label_key: the header which will be used as the keys of the dict
-                       (e.g., for atom labels use _atom_site_label)
+            good_atoms (list of str): Atom labels to consider for dictionary
+            label_key (str): the header which will be used as the keys of the dict
+                             (e.g., for atom labels use _atom_site_label)
         
         Returns:
             dict (dict): Dictionary of specified keys and attributes (properties)
