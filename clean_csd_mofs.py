@@ -7,7 +7,6 @@ from pymatgen.io.cif import CifWriter
 import argparse
 import os
 import uuid
-import warnings
 import numpy as np
 
 script_path, script_name = os.path.split(os.path.realpath(__file__))
@@ -244,8 +243,7 @@ def csd_to_pymatgen(path, atoms):
     sym_ops = [val for val in blocks["symmetry"] if val[0] != "_"]
     # Get rid of any numbering "e.g., 1 x,y,z" from the symmetry operations
     for i in range(len(sym_ops)):
-        sym_ops[i] = [val.split()[-1] for val in sym_ops[i].strip().split(',')]
-        sym_ops[i] = ",".join(sym_ops[i])
+        sym_ops[i] = ",".join([val.split()[-1] for val in sym_ops[i].strip().split(',')])
 
     species, coords = convert_to_p1(sym_ops, species, coords)
 
