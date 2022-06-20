@@ -162,7 +162,6 @@ def remove_duplicate_atoms(pm_struct):
             if all(np.round(coord, 2) == np.round(atom.frac_coords, 2)):
                 bad_indices.append(num)
         else:
-            print(atom.frac_coords)
             coords_check.append(atom.frac_coords)
 
     pm_struct.remove_sites(bad_indices)
