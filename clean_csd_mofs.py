@@ -159,9 +159,10 @@ def remove_duplicate_atoms(pm_struct):
     bad_indices = []
     for num, atom in enumerate(pm_struct):
         for coord in coords_check:
-            if all(coord == atom.frac_coords):
+            if all(np.round(coord, 2) == np.round(atom.frac_coords, 2)):
                 bad_indices.append(num)
         else:
+            print(atom.frac_coords)
             coords_check.append(atom.frac_coords)
 
     pm_struct.remove_sites(bad_indices)
