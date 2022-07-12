@@ -141,16 +141,6 @@ def convert_to_p1(ops, asym_unit_atoms, asym_unit_coords):
     unit_cell_coords = np.asarray(unit_cell_coords)
     unit_cell_coords = unit_cell_coords[:, :-1]
     
-    """
-    for a in range(len(unit_cell_coords[0])):
-        for b in range(len(unit_cell_coords[1])):
-            if np.round(unit_cell_coords[a][b], 2) == 1:
-                print(unit_cell_coords[a][b])
-                unit_cell_coords[a][b] = 0
-            else:
-                print(np.round(unit_cell_coords[a][b], 2))
-    """
-
     return unit_cell_atoms, unit_cell_coords
 
 def remove_duplicate_atoms(pm_struct):
