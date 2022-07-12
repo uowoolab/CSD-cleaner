@@ -140,6 +140,16 @@ def convert_to_p1(ops, asym_unit_atoms, asym_unit_coords):
 
     unit_cell_coords = np.asarray(unit_cell_coords)
     unit_cell_coords = unit_cell_coords[:, :-1]
+    
+    """
+    for a in range(len(unit_cell_coords[0])):
+        for b in range(len(unit_cell_coords[1])):
+            if np.round(unit_cell_coords[a][b], 2) == 1:
+                print(unit_cell_coords[a][b])
+                unit_cell_coords[a][b] = 0
+            else:
+                print(np.round(unit_cell_coords[a][b], 2))
+    """
 
     return unit_cell_atoms, unit_cell_coords
 
@@ -157,6 +167,13 @@ def remove_duplicate_atoms(pm_struct):
 
     coords_check = []
     bad_indices = []
+
+    for atom in pm_struct:
+        if any(np.round(atom.frac_coords, 2) == 1):
+            for x in range(3):
+                if round(atom.frac_coords[x], 2) == 1:
+                    atom.frac_coords[x] = 0
+
     for num, atom in enumerate(pm_struct):
         for coord in coords_check:
             if all(np.round(coord, 2) == np.round(atom.frac_coords, 2)):
@@ -290,9 +307,9 @@ def main(path, tmp_path=None):
 
     ref = path.split('/')[-1].split("_P1.cif")[0]
     asymmetric_unit_atoms = get_asymmetric_unit(ref)
-    mof_p1 = csd_to_pymatgen(temp_cif_path, asymmetric_unit_atoms)
     if tmp_path is not None:
         shutil.copyfile(temp_cif_path, tmp_path)
+    mof_p1 = csd_to_pymatgen(temp_cif_path, asymmetric_unit_atoms)
     os.remove(temp_cif_path)
     CifWriter(mof_p1).write_file(path)
     
