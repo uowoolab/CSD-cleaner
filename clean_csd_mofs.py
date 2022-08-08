@@ -299,9 +299,10 @@ def main(path, tmp_path=None, input_is_cif=False):
             mof_p1 (Pymatgen Structure object): MOF in P1 symmetry
     """
 
-    ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
     if input_is_cif:
+        ref = path.rsplit("_P1.cif", 1)[0]
         ref = f"{ref}.cif"
+    ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
     asymmetric_unit_atoms = get_asymmetric_unit(ref, input_is_cif)
     if tmp_path is not None:
         shutil.copyfile(temp_cif_path, tmp_path)
