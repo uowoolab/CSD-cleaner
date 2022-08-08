@@ -302,7 +302,8 @@ def main(path, tmp_path=None, input_is_cif=False):
     if input_is_cif:
         ref = path.rsplit("_P1.cif", 1)[0]
         ref = f"{ref}.cif"
-    ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
+    else:
+        ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
     asymmetric_unit_atoms = get_asymmetric_unit(ref, input_is_cif)
     if tmp_path is not None:
         shutil.copyfile(temp_cif_path, tmp_path)
