@@ -77,23 +77,27 @@ def get_dict(lst, good_atoms, label_key):
        
     return dict
 
-def get_asymmetric_unit(ref):
+def get_asymmetric_unit(ref, is_cif=False):
 
     """ 
     Retrieve a cif from the CSD and return the
     asymmetric unit molecule atoms. Also, write the crystal to a 
     temporary cif to get atomic coordinates of the crystal
-    (no way to do this with CSD).
+    (no way to do this with CSD). If is_cif is True, do not
+    retrieve the structure from CSD, just read the specified cif.
         
         Parameters:
-            ref (str): the CSD refcode for the structure
+            ref (str): the CSD refcode for the structure (or cif filename if
+                       is_cif is equal to True)
         Returns:
             atoms (list of str): the atom labels of the asymmetric unit molecule
         
     """
-
-    csd_reader = io.EntryReader('CSD')
-    cryst = csd_reader.entry(ref).crystal
+    if is_cif:
+        cryst = io.CrystalReader(ref)[0]
+    else:
+        csd_reader = io.EntryReader('CSD')
+        cryst = csd_reader.entry(ref).crystal
     cryst.centre_molecule()
     mol = cryst.asymmetric_unit_molecule
     atoms = [str(atom).replace("Atom(", "").strip(")") for atom in mol.atoms]
@@ -281,7 +285,7 @@ def csd_to_pymatgen(path, atoms):
 
     return struct
 
-def main(path, tmp_path=None):
+def main(path, tmp_path=None, input_is_cif=False):
 
     """
     Get the asymmetric unit of a CSD structure and convert it to a Pymatgen
@@ -295,8 +299,10 @@ def main(path, tmp_path=None):
             mof_p1 (Pymatgen Structure object): MOF in P1 symmetry
     """
 
-    ref = path.split('/')[-1].split("_P1.cif")[0]
-    asymmetric_unit_atoms = get_asymmetric_unit(ref)
+    ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
+    if input_is_cif:
+        ref = f"{ref}.cif"
+    asymmetric_unit_atoms = get_asymmetric_unit(ref, input_is_cif)
     if tmp_path is not None:
         shutil.copyfile(temp_cif_path, tmp_path)
     mof_p1 = csd_to_pymatgen(temp_cif_path, asymmetric_unit_atoms)
@@ -318,13 +324,20 @@ if __name__ == "__main__":
     parser.add_argument("-d", action='store_true',
                         help="If this flag is present, " +
                         " keep the temporary CSD cif.")
+    parser.add_argument("-inp_is_cif", action="store_true",
+                        help="If this flag is present, " +
+                        " the input is a cif file.")
 
     args = parser.parse_args()
     refcode = args.refcode
     write_dir = args.write_dir
+    inp_is_cif = args.inp_is_cif
+    if inp_is_cif:
+        refcode = refcode.split(".cif")[0]
     final_cif_path = "{}/{}_P1.cif".format(write_dir, refcode)
-    if args.d: 
-        main(final_cif_path, tmp_path="{}/{}_original.cif".format(write_dir,
-                                                                  refcode))
+    if args.d:
+        main(final_cif_path,
+             tmp_path="{}/{}_original.cif".format(write_dir, refcode),
+             input_is_cif=inp_is_cif)
     else:
-        main(final_cif_path)
+        main(final_cif_path, input_is_cif=inp_is_cif)
