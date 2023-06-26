@@ -285,14 +285,15 @@ def csd_to_pymatgen(path, atoms):
 
     return struct
 
-def main(path, tmp_path=None, input_is_cif=False):
+def main(write_path, read_path=None, tmp_path=None, input_is_cif=False):
 
     """
     Get the asymmetric unit of a CSD structure and convert it to a Pymatgen
     Structure object in P1 symmetry. Then, write the cif to a specified path.
 
         Parameters:
-            path (str): Path to write the cif
+            read_path (str): Path to read the cif from (used if inp_is_cif)
+            write_path (str): Path to write the cif
             tmp_path (str): Path to write the temporary cif for debugging
 
         Returns:
@@ -300,16 +301,16 @@ def main(path, tmp_path=None, input_is_cif=False):
     """
 
     if input_is_cif:
-        ref = path.rsplit("_P1.cif", 1)[0]
+        ref = read_path.rsplit("_P1.cif", 1)[0]
         ref = f"{ref}.cif"
     else:
-        ref = path.split('/')[-1].rsplit("_P1.cif", 1)[0]
+        ref = write_path.split('/')[-1].rsplit("_P1.cif", 1)[0]
     asymmetric_unit_atoms = get_asymmetric_unit(ref, input_is_cif)
     if tmp_path is not None:
         shutil.copyfile(temp_cif_path, tmp_path)
     mof_p1 = csd_to_pymatgen(temp_cif_path, asymmetric_unit_atoms)
     os.remove(temp_cif_path)
-    CifWriter(mof_p1).write_file(path)
+    CifWriter(mof_p1).write_file(write_path)
     
     return mof_p1
 
@@ -323,6 +324,9 @@ if __name__ == "__main__":
                         default=os.getcwd(),
                         help="Directory to write the cif." + 
                         " Defaults to current working directory.",)
+    parser.add_argument("--read_dir", type=str,
+                        default=os.getcwd(),
+                        help="Directory of where the cif is located")
     parser.add_argument("-d", action='store_true',
                         help="If this flag is present, " +
                         " keep the temporary CSD cif.")
@@ -336,10 +340,14 @@ if __name__ == "__main__":
     inp_is_cif = args.inp_is_cif
     if inp_is_cif:
         refcode = refcode.split(".cif")[0]
+        read_path = "{}/{}".format(args.read_dir, refcode)
     final_cif_path = "{}/{}_P1.cif".format(write_dir, refcode)
     if args.d:
         main(final_cif_path,
              tmp_path="{}/{}_original.cif".format(write_dir, refcode),
              input_is_cif=inp_is_cif)
     else:
-        main(final_cif_path, input_is_cif=inp_is_cif)
+        if inp_is_cif:
+            main(final_cif_path, read_path=read_path, input_is_cif=inp_is_cif)
+        else:
+            main(final_cif_path, input_is_cif=inp_is_cif)
